@@ -24,3 +24,9 @@ HISTSIZE=SAVEHIST=10000
 
 export WINEBASE="$HOME/.local/share/wineprefixes"
 export WINEPREfix="$WINEBASE/default"
+
+##########
+# Editor #
+##########
+
+export EDITOR="vim"

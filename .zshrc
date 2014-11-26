@@ -94,6 +94,16 @@ git_branch_name() {
 		fi
 }
 
+############
+# History #
+###########
+
+# Save timestamps and runtimes to the history file.
+setopt extendedhistory
+
+# All shells immediatly see new history from other shells.
+setopt sharehistory
+
 ###############
 # Compilation #
 ###############
@@ -165,3 +175,5 @@ zle -N zle-keymap-select
 #########
 
 alias please='sudo $(fc -ln -1)'
+
+# "/home/joshua/.bin/Scripts/Random GLaDOS Quotes/gladQuotes.sh"

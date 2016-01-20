@@ -2,7 +2,7 @@
 # Path #
 ########
 
-export PATH="$HOME/.bin:$PATH"
+export PATH="$HOME/.bin:$PATH:$HOME/.bin"
 
 ###########
 # History #
@@ -16,11 +16,11 @@ HISTSIZE=SAVEHIST=10000
 # Wine #
 ########
 
-export WINEBASE="$HOME/.local/share/wineprefixes"
-export WINEPREfix="$WINEBASE/default"
+export WINEBASE="$HOME/.wineprefixes"
+export WINEPREFIX="$WINEBASE/default"
 
 ##########
 # Editor #
 ##########
 
-export EDITOR="vim"
+export EDITOR="emacs"

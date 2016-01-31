@@ -156,7 +156,7 @@ export PS_VI_INSERT=""
 # Renders the prompt, gets called whenever the keymap changes (i.e. change from
 # insert to normal mode, or vice versa), or when the prompt is asked to be
 # re-rendered.
-function prompt-init zle-keymap-select {
+function prompt-init {
 
     # Immediatly grab the return status of the last program the user ran, so
     # that we don't clober it later.
@@ -235,17 +235,26 @@ function prompt-init zle-keymap-select {
     export RPS1="${${KEYMAP/vicmd/$PS_VI_NORMAL}/(main|viins)/$PS_VI_INSERT}"
 
     # Re-render the new prompt.
-    zle reset-prompt
+	if zle; then
+		zle reset-prompt
+	fi
 }
 
 function zle-line-init {
-	zle autosuggest-start
+	auto-fu-init
 	prompt-init
 }
 
+function zle-keymap-select {
+	auto-fu-zle-keymap-select
+	prompt-init
+}
+
+zstyle ':completion:*' completer _oldlist _complete
 
 zle -N zle-line-init
 zle -N zle-keymap-select
+prompt-init
 
 # If the window resizes, re-render the prompt.
 function TRAPWINCH() {
@@ -264,3 +273,10 @@ alias please='sudo $(fc -ln -1)'
 
 mkdir -p ~/RAM/.desktop
 mkdir -p ~/RAM/.downloads
+
+###############
+# Autosuggest #
+###############
+
+# Use right arrow to trigger autosuggest.
+AUTOSUGGESTION_ACCEPT_RIGHT_ARROW=1

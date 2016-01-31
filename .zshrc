@@ -1,6 +1,9 @@
 # This file is sourced by non-interactive and interactive zsh login shells.
 # In an interactive shell, this is sourced before .zlogin.
 
+# Init plugins.
+source ~/.zsh/init.zsh
+
 if echo "$-" | grep "l" > /dev/null; then
 else
     function precmd() {
@@ -153,7 +156,7 @@ export PS_VI_INSERT=""
 # Renders the prompt, gets called whenever the keymap changes (i.e. change from
 # insert to normal mode, or vice versa), or when the prompt is asked to be
 # re-rendered.
-function zle-line-init zle-keymap-select {
+function prompt-init zle-keymap-select {
 
     # Immediatly grab the return status of the last program the user ran, so
     # that we don't clober it later.
@@ -182,13 +185,13 @@ function zle-line-init zle-keymap-select {
     fi
 
     # If there is any news available, tell the user.
-    local news_count="$(eselect news count)"
+    local news_count="$(cat ~/RAM/.newsd)"
     if [[ "${news_count}" -ne 0 ]]; then
         tokens+=(yellow:"News: ${news_count}")
     fi
 
     # If dispatch-conf needs to be invoked, tell the user.
-    local dispatch_count="$(find /etc 2>/dev/null | egrep '[.]_cfg[0-9]+_[^/]*' | wc -l)"
+    local dispatch_count="$(cat ~/RAM/.dispatch-confd)"
     if [[ "${dispatch_count}" -ne 0 ]]; then
         tokens+=(yellow:"Cfg: ${dispatch_count}")
     fi
@@ -206,16 +209,16 @@ function zle-line-init zle-keymap-select {
     for i in $tokens; do
 
 	# Extract the color of the token.
-        local color=$(echo $i | cut -f1 -d:)
+    local token_color=$(echo $i | cut -f1 -d:)
 
 	# Extract the content of the token.
-        local content=$(echo $i | cut -f2- -d:)
+    local content=$(echo $i | cut -f2- -d:)
 
 	# Strips color codes from the token content.
-        local zero='%([BSUbfksu]|([FB]|){*})'
+    local zero='%([BSUbfksu]|([FB]|){*})'
 
 	# Construct the new token.
-        local new_token="$PS_OPEN%B%F{$color}$content$PS_CLOSE "
+    local new_token="$PS_OPEN%B%F{$token_color}$content$PS_CLOSE "
 
 	# Count the width of the new token, ignoring non-rendered characters.
         local length=${#${(S%%)new_token//$~zero/}}
@@ -234,6 +237,12 @@ function zle-line-init zle-keymap-select {
     # Re-render the new prompt.
     zle reset-prompt
 }
+
+function zle-line-init {
+	zle autosuggest-start
+	prompt-init
+}
+
 
 zle -N zle-line-init
 zle -N zle-keymap-select

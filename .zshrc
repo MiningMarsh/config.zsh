@@ -141,13 +141,6 @@ setopt promptsubst
 export PS_OPEN='%b%f%k%B%F{red}['
 export PS_CLOSE='%F{red}]%b%f%k'
 
-# A few useful PS shortcuts.
-export PS_PWD="$PS_OPEN%B%F{blue}%1~$PS_CLOSE"
-export PS_TTY="$PS_OPEN%B%F{yellow}%l$PS_CLOSE"
-export PS_USER="$PS_OPEN%B%F{green}%n$PS_CLOSE"
-export PS_TIME="$PS_OPEN%B%F{yellow}%T$PS_CLOSE"
-export PS_PROMPT="%b%f%B%F{red}%#%b%f%k"
-
 # The string we want printed for normal mode.
 export PS_VI_NORMAL="$PS_OPEN%B%F{yellow}NORMAL$PS_CLOSE"
 # The string we want printed for insert mode.
@@ -178,24 +171,12 @@ function prompt-init {
     if [[ "$ret_status" -ne "0" ]]; then
         tokens+=(yellow:"✗: $ret_status")
     fi
-    
+
     # If we are in a git repo, have git branch token.
     if git_branch "$PWD"; then
         tokens+=(white:"$(git_branch_name $PWD)")
     fi
 
-    # If there is any news available, tell the user.
-    local news_count="$(cat ~/RAM/.newsd)"
-    if [[ "${news_count}" -ne 0 ]]; then
-        tokens+=(yellow:"News: ${news_count}")
-    fi
-
-    # If dispatch-conf needs to be invoked, tell the user.
-    local dispatch_count="$(cat ~/RAM/.dispatch-confd)"
-    if [[ "${dispatch_count}" -ne 0 ]]; then
-        tokens+=(yellow:"Cfg: ${dispatch_count}")
-    fi
-        
     # Reset prompt string.
     PS1=""
 
@@ -218,10 +199,10 @@ function prompt-init {
     local zero='%([BSUbfksu]|([FB]|){*})'
 
 	# Construct the new token.
-    local new_token="$PS_OPEN%B%F{$token_color}$content$PS_CLOSE "
+    local new_token="$PS_OPEN%b%F{$token_color}$content$PS_CLOSE "
 
 	# Count the width of the new token, ignoring non-rendered characters.
-        local length=${#${(S%%)new_token//$~zero/}}
+	local length=${#${(S%%)new_token//$~zero/}}
 
 	# If the top-length has not been overrun, render the new token.
         if [[ $(( $running_length + $length )) -lt $top_length ]]; then

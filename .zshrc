@@ -222,12 +222,10 @@ function prompt-init {
 }
 
 function zle-line-init {
-	auto-fu-init
 	prompt-init
 }
 
 function zle-keymap-select {
-	auto-fu-zle-keymap-select
 	prompt-init
 }
 

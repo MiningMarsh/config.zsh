@@ -4,36 +4,48 @@
 # Init plugins.
 source ~/.zsh/init.zsh
 
-if echo "$-" | grep "l" > /dev/null; then
-else
-    function precmd() {
-        print -Pn "\e]2;$USER@%~\a"
-        print -Pn "\033]0;$USER@%~\007"
-    }
+# Only setup terminal title hooks if we are actually running in an interactive
+# session.
+if ! {echo "$-" | grep "l" > /dev/null}; then
 
-    function preexec() {
-        print -Pn "\e]2;$1\a"
-        print -Pn "\033]0;$1\007"
-    }
+	# Function that prints something in the terminal title.
+	local function zshrc/terminal-title-print() {
+		print -Pn "\e]2;$@\a"
+		print -Pn "\033]0;$@\007"
+	}
+
+	# Every time the prompt is rendered, diplsay user@directory in the terminal
+	# title for terminals that obey the correct VT100 escape code.
+	function precmd() {
+		zshrc/terminal-title-print "$USER@%~"
+	}
+
+	# Every time a command is run, print that command in the terminal title for
+	# terminals that obey the correct VT100 escape code.
+	function preexec() {
+
+		# The second argument zsh provides is a stripped down version of the full
+		# command run.
+		zshrc/terminal-title-print "$2"
+	}
 fi
 
 ################
 # Autocomplete #
 ################
 
-# Autocomplete.
+# Setup autocomplete.
 autoload -U compinit promptinit
 compinit
 
-# Use an autocomplete cache to speed things up.
-zstyle ':completion::completion:*' use-cache 1
-zstyle ':completion::complete:*' use-cache 1
-
-# Do completions of thins like partial paths.
-setopt completeinword
-
 # Autocomplete entry for killall.
 zstyle ':completion:*:killall:*' command 'ps -u $USER -o cmd'
+
+# Do completions of things like partial paths.
+setopt completeinword
+
+# Use an autocomplete cache to speed things up.
+zstyle ':completion:*' use-cache on
 
 ##########
 # Colors #
@@ -42,7 +54,7 @@ zstyle ':completion:*:killall:*' command 'ps -u $USER -o cmd'
 # Load colors.
 autoload colors && colors
 
-# Load colors into environment variables.
+# Load colors codes into environment variables.
 for COLOR in RED GREEN YELLOW BLUE MAGENTA CYAN BLACK WHITE; do
     eval $COLOR='%{$fg_no_bold[${(L)COLOR}]%}'
     eval BOLD_$COLOR='%{$fg_bold[${(L)COLOR}]%}'
@@ -54,7 +66,7 @@ eval RESET='$reset_color'
 # Ls colors.
 
 eval `dircolors`
-alias ls="ls -F --color=auto"
+alias ls="ls --color=auto"
 
 ############
 # Globbing #
@@ -71,14 +83,14 @@ unsetopt caseglob
 #######
 
 # Git the branch of a path.
-function git_branch() {
+local function zshrc/git-branch() {
     git branch 1>/dev/null 2>&1
 }
 
 # Get the branch name of a path.
-git_branch_name() {
-        TARGET="$PWD"
-        if git_branch "$TARGET"
+local function zshrc/git-branch-name() {
+        local target="$PWD"
+        if zshrc/git-branch "$target"
         then
                 echo "`git rev-parse --abbrev-ref HEAD 2>/dev/null`"
         else
@@ -100,7 +112,19 @@ setopt sharehistory
 # Compilation #
 ###############
 
+# Compile things automatically.
 autoload -U zrecompile
+
+# Automatically recompile the compdump, zshrc, and our zgen plugins file if
+# needed. This also compiles zgen itself.
+zrecompile -qp \
+           -R ~/.zshrc -- \
+           -R ~/.zsh/init.zsh -- \
+           -R ~/.zsh/zgen/zgen.zsh -- \
+           -M ~/.zcompdump --
+
+# Recompile everything else if needed.
+zrecompile -q
 
 #################
 # Word matching #
@@ -138,21 +162,22 @@ promptinit
 setopt promptsubst
 
 # Prompt open and close brace.
-export PS_OPEN='%b%f%k%B%F{red}['
-export PS_CLOSE='%F{red}]%b%f%k'
+local zshrc_ps_open='%b%k%F{red}[%f'
+local zshrc_ps_close='%b%k%F{red}]%f'
 
 # The string we want printed for normal mode.
-export PS_VI_NORMAL="$PS_OPEN%B%F{yellow}NORMAL$PS_CLOSE"
+local zshrc_ps_vi_normal="${zshrc_ps_open}%B%F{yellow}NORMAL${zshrc_ps_close}"
+
 # The string we want printed for insert mode.
-export PS_VI_INSERT=""
+local zshrc_ps_vi_insert=""
 
 # Renders the prompt, gets called whenever the keymap changes (i.e. change from
 # insert to normal mode, or vice versa), or when the prompt is asked to be
-# re-rendered.
+# re-rendered. This is also called when zle re-renders a line.
 function prompt-init {
 
     # Immediatly grab the return status of the last program the user ran, so
-    # that we don't clober it later.
+    # that we don't clobber it later.
     local ret_status="$?"
 
     # Holds the tokens to eventually render.
@@ -173,8 +198,8 @@ function prompt-init {
     fi
 
     # If we are in a git repo, have git branch token.
-    if git_branch "$PWD"; then
-        tokens+=(white:"$(git_branch_name $PWD)")
+    if zshrc/git-branch "$PWD"; then
+        tokens+=(white:"$(zshrc/git-branch-name $PWD)")
     fi
 
     # Reset prompt string.
@@ -189,22 +214,22 @@ function prompt-init {
     # For every token, render the token.
     for i in $tokens; do
 
-	# Extract the color of the token.
-    local token_color=$(echo $i | cut -f1 -d:)
+        # Extract the color of the token.
+        local token_color=$(echo $i | cut -f1 -d:)
 
-	# Extract the content of the token.
-    local content=$(echo $i | cut -f2- -d:)
+        # Extract the content of the token.
+        local content=$(echo $i | cut -f2- -d:)
 
-	# Strips color codes from the token content.
-    local zero='%([BSUbfksu]|([FB]|){*})'
+        # Strips color codes from the token content.
+        local zero='%([BSUbfksu]|([FB]|){*})'
 
-	# Construct the new token.
-    local new_token="$PS_OPEN%b%F{$token_color}$content$PS_CLOSE "
+        # Construct the new token.
+        local new_token="${zshrc_ps_open}%b%F{${token_color}}${content}${zshrc_ps_close} "
 
-	# Count the width of the new token, ignoring non-rendered characters.
-	local length=${#${(S%%)new_token//$~zero/}}
+        # Count the width of the new token, ignoring non-rendered characters.
+        local length=${#${(S%%)new_token//$~zero/}}
 
-	# If the top-length has not been overrun, render the new token.
+        # If the top-length has not been overrun, render the new token.
         if [[ $(( $running_length + $length )) -lt $top_length ]]; then
             PS1="$PS1$new_token"
             running_length=$(( $running_length + $length ))
@@ -212,32 +237,44 @@ function prompt-init {
     done
 
     # Export the new prompts.
-    export PS1="$PS1%B%F{red}%#%b%f%k "
-    export RPS1="${${KEYMAP/vicmd/$PS_VI_NORMAL}/(main|viins)/$PS_VI_INSERT}"
+	export PS1="$PS1%k%b%F{red}%#%f "
+	export RPS1="${${KEYMAP/vicmd/$zshrc_ps_vi_normal}/(main|viins)/$zshrc_ps_vi_insert}"
 
-    # Re-render the new prompt.
+    # Re-render the new prompt if zle is loaded.
 	if zle; then
 		zle reset-prompt
 	fi
 }
 
+# Re-render the prompt everytime the line re-renders.
 function zle-line-init {
 	prompt-init
 }
 
+# Reset the prompt every time the keymap changes. This is needed so that
+# the [NORMAL] mode prompt appears on normal mode.
 function zle-keymap-select {
 	prompt-init
 }
 
-zstyle ':completion:*' completer _oldlist _complete
-
+# Setup the ZLE line rendering system.
 zle -N zle-line-init
+
+# Setup the ZLE keymap system.
 zle -N zle-keymap-select
+
+# Initialize the prompt on first run.
 prompt-init
 
-# If the window resizes, re-render the prompt.
+# Re-render the prompt half a second after the terminal is resized.
 function TRAPWINCH() {
-    zle-line-init
+
+	# ZSH restarts the TRAPWINCH every time a restart occurs, so this is as easy
+	# as just sticking the wait here.
+	sleep 0.5
+
+	# Restart zle rendering.
+	zle-line-init
 }
 
 #########
@@ -245,17 +282,3 @@ function TRAPWINCH() {
 #########
 
 alias please='sudo $(fc -ln -1)'
-
-#############
-# RAM Setup #
-#############
-
-mkdir -p ~/RAM/.desktop
-mkdir -p ~/RAM/.downloads
-
-###############
-# Autosuggest #
-###############
-
-# Use right arrow to trigger autosuggest.
-AUTOSUGGESTION_ACCEPT_RIGHT_ARROW=1

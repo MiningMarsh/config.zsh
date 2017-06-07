@@ -4,6 +4,14 @@
 # Init plugins.
 source ~/.zsh/init.zsh
 
+# Stores the last PWD so that on PWD change we can LS new directory.
+local zshrc_last_pwd="$PWD"
+
+local function zshrc/status() {
+	local msg="$@"
+	echo -e ' \e[32m*\e[0m '"$msg"
+}
+
 # Only setup terminal title hooks if we are actually running in an interactive
 # session.
 if ! {echo "$-" | grep "l" > /dev/null}; then
@@ -17,6 +25,13 @@ if ! {echo "$-" | grep "l" > /dev/null}; then
 	# Every time the prompt is rendered, diplsay user@directory in the terminal
 	# title for terminals that obey the correct VT100 escape code.
 	function precmd() {
+		if [[ "${zshrc_last_pwd}" != "$PWD" ]]; then
+			zshrc_last_pwd="$PWD"
+			clear
+			zshrc/status "Changed directory: $PWD"
+			ls
+		fi
+
 		zshrc/terminal-title-print "$USER@%~"
 	}
 

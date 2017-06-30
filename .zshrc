@@ -25,13 +25,6 @@ if ! {echo "$-" | grep "l" > /dev/null}; then
 	# Every time the prompt is rendered, diplsay user@directory in the terminal
 	# title for terminals that obey the correct VT100 escape code.
 	function precmd() {
-		if [[ "${zshrc_last_pwd}" != "$PWD" ]]; then
-			zshrc_last_pwd="$PWD"
-			clear
-			zshrc/status "Changed directory: $PWD"
-			ls
-		fi
-
 		zshrc/terminal-title-print "$USER@%~"
 	}
 
@@ -41,7 +34,7 @@ if ! {echo "$-" | grep "l" > /dev/null}; then
 
 		# The second argument zsh provides is a stripped down version of the full
 		# command run.
-		zshrc/terminal-title-print "$2"
+		zshrc/terminal-title-print "$USER@%~: $2"
 	}
 fi
 
@@ -209,7 +202,7 @@ function prompt-init {
 
     # If a program returned an error code, inform the user
     if [[ "$ret_status" -ne "0" ]]; then
-        tokens+=(yellow:"✗: $ret_status")
+        tokens+=(yellow:"✗ $ret_status")
     fi
 
     # If we are in a git repo, have git branch token.

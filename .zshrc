@@ -9,7 +9,9 @@ local zshrc_last_pwd="$PWD"
 
 local function zshrc/status() {
 	local msg="$@"
-	echo -e ' \e[32m*\e[0m '"$msg"
+	if [[ -z "$EMACS" ]]; then
+	    echo -e ' \e[32m*\e[0m '"$msg"
+	fi
 }
 
 # Only setup terminal title hooks if we are actually running in an interactive
@@ -18,8 +20,10 @@ if ! {echo "$-" | grep "l" > /dev/null}; then
 
 	# Function that prints something in the terminal title.
 	local function zshrc/terminal-title-print() {
+	    if [[ -z "$EMACS" ]]; then
 		print -Pn "\e]2;$@\a"
 		print -Pn "\033]0;$@\007"
+	    fi
 	}
 
 	# Every time the prompt is rendered, diplsay user@directory in the terminal
@@ -290,3 +294,5 @@ function TRAPWINCH() {
 #########
 
 alias please='sudo $(fc -ln -1)'
+
+#source ~/Sources/go/bin/activate

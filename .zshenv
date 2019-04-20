@@ -16,7 +16,7 @@ HISTSIZE=SAVEHIST=10000
 # Wine #
 ########
 
-export WINEBASE="$HOME/.wineprefixes"
+export WINEBASE="$HOME/.local/share/wineprefixes"
 export WINEPREFIX="$WINEBASE/default"
 
 ##########

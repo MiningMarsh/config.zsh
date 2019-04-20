@@ -26,7 +26,7 @@ if ! {echo "$-" | grep "l" > /dev/null}; then
 	    fi
 	}
 
-	# Every time the prompt is rendered, diplsay user@directory in the terminal
+	# Every time the prompt is rendered, display user@directory in the terminal
 	# title for terminals that obey the correct VT100 escape code.
 	function precmd() {
 		zshrc/terminal-title-print "$USER@%~"
@@ -198,6 +198,9 @@ function prompt-init {
     # Always have username token.
     tokens+=(green:'%n')
 
+    # Always have hostname token.
+    tokens+=(cyan:$(hostname))
+
     # Always have tty path rendered.
     tokens+=(yellow:'%l')
 
@@ -249,13 +252,13 @@ function prompt-init {
     done
 
     # Export the new prompts.
-	export PS1="$PS1%k%b%F{red}%#%f "
-	export RPS1="${${KEYMAP/vicmd/$zshrc_ps_vi_normal}/(main|viins)/$zshrc_ps_vi_insert}"
+    export PS1="$PS1%k%b%F{red}%#%f "
+    export RPS1="${${KEYMAP/vicmd/$zshrc_ps_vi_normal}/(main|viins)/$zshrc_ps_vi_insert}"
 
     # Re-render the new prompt if zle is loaded.
-	if zle; then
-		zle reset-prompt
-	fi
+    if zle; then
+        zle reset-prompt
+    fi
 }
 
 # Re-render the prompt everytime the line re-renders.
@@ -278,12 +281,8 @@ zle -N zle-keymap-select
 # Initialize the prompt on first run.
 prompt-init
 
-# Re-render the prompt half a second after the terminal is resized.
+# Re-render the prompt after the terminal is resized.
 function TRAPWINCH() {
-
-	# ZSH restarts the TRAPWINCH every time a restart occurs, so this is as easy
-	# as just sticking the wait here.
-	sleep 0.5
 
 	# Restart zle rendering.
 	zle-line-init
